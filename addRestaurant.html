@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<body>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+
+    <h1>Create a new restaurant</h1>
+    <h3 >name</h3>
+    <input type="text" ng-model="restaurant.name" placeholder="name">
+
+    <div>
+        <p> English: info</p>
+        <input type="text" ng-model="restaurant.info.en" placeholder="info">
+        <p> French: info </p>
+        <input type="text" ng-model="restaurant.info.fr" placeholder="info">
+    </div>
+
+    <h3>Foods</h3>
+    <div ng-repeat="f in foods">
+       <input type="checkbox" ng-checked="f.selected" ng-click="toggleFoodSelection($index)">
+        {{f.name}}
+    </div>
+
+    <div ><h3>Address</h3>
+        <input type="text" ng-model="restaurant.address.street" placeholder="street">
+        <input type="text" ng-model="restaurant.address.PC" placeholder="postal code">
+        <input type="text" ng-model="restaurant.address.city" placeholder="city">
+    </div>
+
+
+    <h3>images</h3>
+    <input type="file" id="file" name="file" />
+    <button ng-click="addPicture()">Add</button>
+
+    <p>
+        opening hours
+        <input type="number" ng-model="openingHours.weekday" placeholder="day">
+        <input type="number" ng-model="openingHours.start" placeholder="start">
+        <input type="number" ng-model="openingHours.end" placeholder="end">
+        <button ng-click="addHours()">add</button>
+    </p>
+
+    <button ng-click="submit()">submit</button>
+</div>
+
+
+<script>
+    var app = angular.module('myApp', []);
+
+    app.controller('myCtrl', function($scope, $http)
+    {
+        //
+        $scope.path = "http://localhost:1234";
+        $scope.restaurant = {};
+        clearRestaurantForm();
+        $scope.openingHours = {};
+
+
+        $scope.addPicture = function()
+        {
+            var f = document.getElementById('file').files[0],
+                r = new FileReader();
+
+            r.onloadend = function(e) {
+                var data = e.target.result;
+                $scope.restaurant.images.push(arrayBufferToBase64(data));
+
+                console.log("image added");
+            };
+            r.readAsArrayBuffer(f);
+        };
+
+
+        $scope.submit= function()
+        {
+            console.log("submit");
+            var selectedFoods = [];
+            for(var i=0; i<$scope.foods.length; i++)
+            {
+                if($scope.foods[i].selected == true)
+                    selectedFoods.push($scope.foods[i]._id);
+            }
+            $scope.restaurant.foodCategory = selectedFoods;
+            console.log($scope.restaurant);
+            var res = $http.post($scope.path +'/restaurant/addRestaurant', $scope.restaurant);
+
+            res.then(function (data, status, headers, config) {
+                console.log(data);
+                $scope.restaurant = {};
+                clearRestaurantForm();
+            });
+            res.catch(function (data, status, header, config) {
+                console.log("error");
+            });
+        };
+
+
+        function clearRestaurantForm()
+        {
+            $scope.restaurant.address = {};
+            $scope.restaurant.info = {};
+            $scope.restaurant.images = [];
+            $scope.restaurant.openingHours = [];
+            $scope.restaurant.category = {};
+
+            console.log($scope.restaurant);
+        }
+
+        $scope.addHours = function()
+        {
+            $scope.restaurant.openingHours.push($scope.openingHours);
+            console.log($scope.openingHours);
+            console.log($scope.restaurant.openingHours);
+            $scope.openingHours = {};
+        };
+
+        function arrayBufferToBase64( buffer ) {
+            var binary = '';
+            var bytes = new Uint8Array( buffer );
+            var len = bytes.byteLength;
+            for (var i = 0; i < len; i++) {
+                binary += String.fromCharCode( bytes[ i ] );
+            }
+            return window.btoa( binary );
+        }
+
+        $scope.foods = null;
+        $http({
+            method : "GET",
+            url : $scope.path+"/foodCategory/getFoodCategories",
+            params: {sendImage: false}
+        }).then(function onSuccess(response) {
+            $scope.foods = response.data;
+            for(var i=0; i<$scope.foods.length; i++)
+            {
+                $scope.foods[i].selected = false;
+            }
+            console.log($scope.foods);
+        }, function onError(response) {
+            console.log("error");
+        });
+
+        $scope.toggleFoodSelection = function(id)
+        {
+            $scope.foods[id].selected = $scope.foods[id].selected !== true;
+        }
+        
+    });
+</script>
+
+</body>
+</html>

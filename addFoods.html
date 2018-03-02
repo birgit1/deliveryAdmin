@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<body>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+
+    <h1>Create a food category</h1>
+
+    <h3>FOOD</h3>
+    
+
+    <input type="text" ng-model="food.name" placeholder="name">
+
+
+    <h3>image</h3>
+    <input type="file" id="file" name="file" />
+    <button ng-click="addPicture()">Add</button>
+
+    <button ng-click="submit()">submit</button>
+</div>
+
+
+<script>
+    var app = angular.module('myApp', []);
+
+    app.controller('myCtrl', function($scope, $http)
+    {
+        //
+        $scope.path = "http://localhost:1234";
+        $scope.food = {};
+
+
+        $scope.addPicture = function()
+        {
+            var f = document.getElementById('file').files[0],
+                r = new FileReader();
+
+            r.onloadend = function(e) {
+                var data = e.target.result;
+                $scope.food.image = (arrayBufferToBase64(data));
+
+                console.log("image added");
+            };
+            r.readAsArrayBuffer(f);
+        };
+
+
+        $scope.submit= function()
+        {
+            console.log("submit");
+            console.log($scope.food);
+            
+            var res = $http.post($scope.path +'/foodCategory/addFoodCategory', $scope.food);
+
+            res.then(function (data, status, headers, config) {
+                console.log(data);
+                $scope.food = {};
+            });
+            res.catch(function (data, status, header, config) {
+                console.log("error");
+            });
+        };
+
+
+        function arrayBufferToBase64( buffer ) {
+            var binary = '';
+            var bytes = new Uint8Array( buffer );
+            var len = bytes.byteLength;
+            for (var i = 0; i < len; i++) {
+                binary += String.fromCharCode( bytes[ i ] );
+            }
+            return window.btoa( binary );
+        }
+
+    });
+</script>
+
+</body>
+</html>
